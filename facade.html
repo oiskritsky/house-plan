@@ -35,7 +35,23 @@
   h1{font-size:20px;margin:0;font-weight:650}
   .sub{color:var(--muted);font-size:13px}
   .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:6px}
-  svg{display:block;width:100%;height:auto}
+  svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+  svg.pan{cursor:grabbing}
+  .card{position:relative}
+  .zoom{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2}
+  .zoom button{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+  .zoom button:hover{background:color-mix(in srgb,var(--ink) 8%,var(--paper))}
+  .zoom button:focus-visible{outline:2px solid var(--dim);outline-offset:2px}
+  .narrow-only{display:none}
+  @media (max-width:899px){.narrow-only{display:inline}}
+  /* широкий экран: фасад вписан в окно, странице не нужна прокрутка, колёсико масштабирует */
+  @media (min-width:900px){
+    html,body{height:100%}
+    body{padding-block:12px;overflow:hidden}
+    .wrap{height:100%;display:flex;flex-direction:column}
+    .card{flex:1;min-height:0}
+    #f{height:100%}
+  }
   .note{color:var(--muted);font-size:12px;margin:10px 8px 0}
   .ln{stroke:var(--line);stroke-width:.025;fill:none}
   .dl{stroke:var(--dim);stroke-width:.018}
@@ -69,6 +85,7 @@
     <span id="tinfo"></span>
   </div>
   <div class="card">
+    <div class="zoom"><button id="zin" type="button" title="Приблизить">+</button><button id="zout" type="button" title="Отдалить">−</button><button id="zreset" type="button" title="Весь фасад">⤢</button></div>
     <svg id="f" viewBox="-1.4 -9.4 18.9 11.2" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Фасад со стороны прихожей">
       <defs>
         <pattern id="brick" width=".5" height=".26" patternUnits="userSpaceOnUse">
@@ -86,7 +103,7 @@
       </defs>
     </svg>
   </div>
-  <div class="note">Положение окон и двери по горизонтали взято с плана, высоты и вид кровли оценены по фото. Гараж на фото не попал — нарисован по плану, упрощённо.</div>
+  <div class="note">Положение окон и двери по горизонтали взято с плана, высоты и вид кровли оценены по фото. Гараж на фото не попал — нарисован по плану, упрощённо. Колёсико мыши или +/− — масштаб, перетаскивание — сдвиг<span class="narrow-only"> (на узком экране масштаб колёсиком — с зажатым Ctrl)</span>.</div>
 </div>
 <script>
 const S=document.getElementById('f'),NS='http://www.w3.org/2000/svg';
@@ -224,9 +241,9 @@ T(2.3,-.55,'спальня'); T(6.5,-.55,'жилая 2'); T(9.97,-.55,'вход'
  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(TRI.map(t=>[t.dx,t.dh])))}catch(e){}};
  try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v)v.forEach(([a,b],i)=>{TRI[i].dx=a;TRI[i].dh=b})}catch(e){}
  TRI.forEach((t,i)=>{let st=null;
-   t.grp.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY,dx:t.dx,dh:t.dh,o:TRI[1-i].dh};t.grp.classList.add('on');t.grp.setPointerCapture(e.pointerId);e.preventDefault()});
+   t.grp.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY,dx:t.dx,dh:t.dh,o:TRI[1-i].dh};t.grp.classList.add('on');t.grp.setPointerCapture(e.pointerId);e.preventDefault();e.stopPropagation()});
    t.grp.addEventListener('pointermove',e=>{if(!st)return;
-     const k=S.viewBox.baseVal.width/S.getBoundingClientRect().width;
+     const k=1/S.getScreenCTM().a;
      t.dx=r2(st.dx+(e.clientX-st.x)*k); t.dh=r2(st.dh-(e.clientY-st.y)*k);
      if(sym.checked){const o=TRI[1-i];o.dx=-t.dx;o.dh=t.dh}
      apply()});
@@ -235,6 +252,23 @@ T(2.3,-.55,'спальня'); T(6.5,-.55,'жилая 2'); T(9.97,-.55,'вход'
  });
  document.getElementById('treset').onclick=()=>{TRI.forEach(t=>{t.dx=0;t.dh=0});apply();save()};
  apply();
+}
+// ---------- масштаб и сдвиг ----------
+{const V0=S.getAttribute('viewBox').split(' ').map(Number);let v=V0.slice();
+ const set=()=>S.setAttribute('viewBox',v.join(' '));
+ const zoom=(k,cx=v[0]+v[2]/2,cy=v[1]+v[3]/2)=>{
+   const nw=Math.min(V0[2],Math.max(2,v[2]*k)),f=nw/v[2];
+   v=[cx-(cx-v[0])*f,cy-(cy-v[1])*f,nw,v[3]*f];set();};
+ const pt=e=>{const p=S.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(S.getScreenCTM().inverse());return[q.x,q.y]};
+ const wide=matchMedia('(min-width:900px)');
+ S.addEventListener('wheel',e=>{if(!wide.matches&&!e.ctrlKey)return;e.preventDefault();zoom(e.deltaY<0?.85:1/.85,...pt(e))},{passive:false});
+ let d=null;
+ S.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,v:v.slice(),k:1/S.getScreenCTM().a};S.classList.add('pan');S.setPointerCapture(e.pointerId)});
+ S.addEventListener('pointermove',e=>{if(!d)return;v[0]=d.v[0]-(e.clientX-d.x)*d.k;v[1]=d.v[1]-(e.clientY-d.y)*d.k;set()});
+ const up=()=>{d=null;S.classList.remove('pan')};S.addEventListener('pointerup',up);S.addEventListener('pointercancel',up);
+ document.getElementById('zin').onclick=()=>zoom(.75);
+ document.getElementById('zout').onclick=()=>zoom(1/.75);
+ document.getElementById('zreset').onclick=()=>{v=V0.slice();set()};
 }
 </script>
 </body>
