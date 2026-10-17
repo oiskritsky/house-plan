@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>План строения</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --paper:#fffdf8; --ink:#1d2229; --muted:#6b7280;
+    --wall:#262b33; --floor:#fdfcf8; --dimline:#a08355; --dimtext:#7a5f33;
+    --fix:#59616d; --glass:#cfe3f1; --porch:#ebe5d8; --border:#e4ded2;
+    --c-living:#d9a43b; --c-kitchen:#6f9e6a; --c-wet:#4a8cc2;
+    --c-circ:#8a93a3; --c-util:#9a7bb5; --c-garage:#a08a6c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121519; --paper:#1a1e24; --ink:#ebe8e1; --muted:#9aa3ad;
+      --wall:#ddd6c6; --floor:#1f242b; --dimline:#b8935a; --dimtext:#d6b479;
+      --fix:#a8b0bb; --glass:#2d4a63; --porch:#2a2f37; --border:#2c323a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121519; --paper:#1a1e24; --ink:#ebe8e1; --muted:#9aa3ad;
+    --wall:#ddd6c6; --floor:#1f242b; --dimline:#b8935a; --dimtext:#d6b479;
+    --fix:#a8b0bb; --glass:#2d4a63; --porch:#2a2f37; --border:#2c323a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.45 "Segoe UI",Inter,system-ui,-apple-system,sans-serif;padding-block:12px 32px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .wrap{max-width:1800px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  h1{font-size:20px;margin:0;letter-spacing:.02em;font-weight:650}
+  .sub{color:var(--muted);font-size:13px}
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:12px}
+  svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+  svg.drag{cursor:grabbing}
+  .plan-card{position:relative;padding:4px}
+  .stage{position:relative}
+  #beforeOv{position:absolute;inset:0;background:var(--paper);pointer-events:none;overflow:hidden}
+  #beforeOv svg{display:block;width:100%;height:auto}
+  #cmpLine{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#d9a43b;pointer-events:none}
+  .cmpchip{position:absolute;top:8px;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--paper);border:1px solid var(--border);pointer-events:none}
+  .cmpbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--paper)}
+  .seg button{border:0;background:none;color:var(--muted);padding:6px 14px;font:inherit;font-size:13px;cursor:pointer}
+  .seg button+button{border-left:1px solid var(--border)}
+  .seg button.on{background:color-mix(in srgb,var(--ink) 9%,transparent);color:var(--ink);font-weight:600}
+  .seg button:focus-visible,#cmpRange:focus-visible{outline:2px solid #d9a43b;outline-offset:2px}
+  #cmpRange{flex:1 1 220px;max-width:420px;accent-color:#d9a43b}
+  .cmphint{color:var(--muted);font-size:12px}
+  .zoom{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2}
+  .zoom button{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--paper);color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+  .zoom button:hover{background:color-mix(in srgb,var(--ink) 8%,var(--paper))}
+  .mass{fill:var(--wall)}
+  .floor{fill:var(--floor)}
+  .tint{opacity:.10;transition:opacity .15s}
+  .room:hover .tint,.room.hl .tint{opacity:.32}
+  .gap{fill:var(--floor)}
+  .win{fill:var(--glass);stroke:var(--wall);stroke-width:.025}
+  .winl{stroke:var(--wall);stroke-width:.02}
+  .leaf{stroke:var(--fix);stroke-width:.035;fill:none}
+  .arc{stroke:var(--fix);stroke-width:.018;fill:none;stroke-dasharray:.06 .05}
+  .fix{fill:none;stroke:var(--fix);stroke-width:.03}
+  .fixf{fill:url(#hatch);stroke:var(--fix);stroke-width:.03}
+  .porch{fill:var(--porch);stroke:var(--fix);stroke-width:.03}
+  .dl{stroke:var(--dimline);stroke-width:.018}
+  .dt{stroke:var(--dimline);stroke-width:.035}
+  .dx{fill:var(--dimtext);font-size:.24px;font-style:italic;text-anchor:middle}
+  .dx.out{font-size:.32px;font-style:normal;font-weight:600}
+  .rn{fill:var(--muted);font-size:.24px;letter-spacing:.02px;text-anchor:middle;text-transform:uppercase;font-weight:600}
+  .ra{fill:var(--ink);font-size:.40px;text-anchor:middle;font-weight:650}
+  .ra tspan{font-size:.26px;font-weight:500}
+  .rs{fill:var(--muted);font-size:.22px;text-anchor:middle;font-style:italic}
+  .sub{color:var(--muted)}
+  .furn{fill:color-mix(in srgb,var(--floor) 82%,var(--ink));stroke:var(--fix);stroke-width:.022}
+  .pillow{fill:var(--floor);stroke:var(--fix);stroke-width:.02}
+  .blanket{fill:color-mix(in srgb,var(--c-living) 30%,var(--floor));stroke:var(--fix);stroke-width:.02}
+  .fold{fill:color-mix(in srgb,var(--c-living) 55%,var(--floor));stroke:var(--fix);stroke-width:.015}
+  .rug{fill:color-mix(in srgb,var(--c-living) 12%,transparent);stroke:var(--fix);stroke-width:.015;stroke-dasharray:.06 .05}
+  .lamp{fill:color-mix(in srgb,var(--c-living) 60%,var(--floor));stroke:var(--fix);stroke-width:.015}
+  .fl{stroke:var(--fix);stroke-width:.015}
+  .tub{fill:color-mix(in srgb,var(--c-wet) 18%,var(--floor));stroke:var(--fix);stroke-width:.018}
+  .tv{fill:var(--ink);stroke:none}
+  .leaf2{fill:color-mix(in srgb,var(--c-kitchen) 70%,var(--floor));stroke:var(--fix);stroke-width:.012}
+  .pot{fill:color-mix(in srgb,var(--c-garage) 70%,var(--floor));stroke:var(--fix);stroke-width:.015}
+  .car{fill:color-mix(in srgb,var(--c-wet) 45%,var(--floor));stroke:var(--fix);stroke-width:.025}
+  .carroof{fill:color-mix(in srgb,var(--c-wet) 60%,var(--floor));stroke:var(--fix);stroke-width:.015}
+  .cglass{fill:var(--glass);stroke:var(--fix);stroke-width:.015}
+  .tyre{fill:var(--ink);opacity:.8}
+  .tail{fill:#c0392b}
+  .car.hit{fill:#e05a4f;stroke:#b03a30}
+  .ft.hitt{fill:#e05a4f;font-weight:600}
+  .sup{stroke:#e0533d;stroke-width:.045;fill:none;stroke-linejoin:round}
+  .ret{stroke:#3d7fe0;stroke-width:.045;fill:none;stroke-linejoin:round}
+  tr.future td{color:var(--muted);font-style:italic}
+  .dhw{stroke:#e08a2d;stroke-width:.04;fill:none}
+  .boiler{fill:color-mix(in srgb,#e08a2d 22%,var(--floor));stroke:#e08a2d;stroke-width:.03}
+  .valve{fill:#e08a2d;stroke:#b06a1d;stroke-width:.01}
+  .dash{stroke-dasharray:.12 .08}
+  .rad{fill:color-mix(in srgb,#e0533d 22%,var(--floor));stroke:#e0533d;stroke-width:.02}
+  .radf{stroke:#e0533d;stroke-width:.012}
+  .rl{fill:#e0533d;font-size:.17px;text-anchor:middle;font-weight:600}
+  .ft{fill:var(--muted);font-size:.15px;text-anchor:middle}
+  .gate{stroke:var(--fix);stroke-width:.04;fill:none}
+  .north{fill:var(--muted);font-size:.3px;text-anchor:middle;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+  th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  td.n{color:var(--muted);width:36px}
+  td.a{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  th.a{text-align:right}
+  tr.row{cursor:default}
+  tr.row:hover,tr.row.hl{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+  tfoot td{font-weight:650;border-bottom:none}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  .note{color:var(--muted);font-size:12px;margin-top:10px}
+  .nav{display:flex;gap:4px;margin:0 0 10px 6px}
+  .nav a{padding:5px 12px;border-radius:8px;border:1px solid var(--border);color:var(--muted);text-decoration:none;font-size:13px;background:var(--paper)}
+  .nav a.cur{color:var(--ink);border-color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav"><a href="plan.html" id="navPlan">План</a><a href="plan.html?heat" id="navHeat">Отопление</a><a href="facade.html">Фасад</a></nav>
+  <header>
+    <h1>План строения</h1>
+    <div class="sub">Масштаб исходника М 1:100 · размеры в метрах</div>
+  </header>
+  <div class="grid">
+    <div class="card plan-card">
+      <div class="zoom"><button id="zin" title="Приблизить">+</button><button id="zout" title="Отдалить">−</button><button id="zreset" title="Весь план">⤢</button></div>
+      <svg id="plan" viewBox="-1.9 -3.25 19.3 15.85" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="План строения">
+        <defs>
+          <pattern id="hatch" width=".14" height=".14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2=".14" stroke="var(--fix)" stroke-width=".025"/>
+          </pattern>
+        </defs>
+      </svg>
+    </div>
+    <div class="card" id="heatCard" hidden>
+      <table>
+        <thead><tr><th>№</th><th>Радиатор</th><th class="a">Длина</th><th class="a">Мощность</th></tr></thead>
+        <tbody id="htb"></tbody>
+        <tfoot><tr><td></td><td>Итого теплопотери (≈100 Вт/м²)</td><td></td><td class="a" id="htt"></td></tr></tfoot>
+      </table>
+      <div class="note">Одноконтурный газовый котёл 24 кВт и бойлер косвенного нагрева 150 л с ТЭНом в котельной: красная — подача, синяя — обратка, оранжевая — контур бойлера через трёхходовой клапан (приоритет горячей воды: пока бойлер догревается, 15–20 минут, отопление ждёт; ТЭН — резерв на случай отключения газа или обслуживания котла). Западная ветка (кухня-гостиная, спальня, кабинет) — попутная, петля Тихельмана: подача и обратка идут в одну сторону, путь воды через любой радиатор одинаковый, система почти не требует балансировки; обратка от последнего радиатора возвращается к котлу под деревянным полом (пунктир). Короткие ветки — прихожая, коридор, санузлы, гараж — тупиковые. Трубы — металлопластик или PEX; у дверей и под полом идут между лагами, в холодном подполье — с утеплением. Мощность радиаторов — ориентир ≈100 Вт на м² при высоте потолка до 3 м; точный расчёт делает проектировщик. Мансарда (Р11–Р13) — на будущее: отдельный стояк из ниши котельной у лестницы, со своими кранами, чтобы до отделки второго этажа его можно было отключить. Сени не отапливаются, гараж — дежурным режимом. Котёл: с мансардой по отоплению нужно ~16 кВт, 24 кВт дают запас и быстро догревают бойлер; запаса 150 л хватает на ванну с доливом и душ одновременно.</div>
+    </div>
+    <div class="card" id="roomCard">
+      <table>
+        <thead><tr><th>№</th><th>Помещение</th><th class="a">Площадь, м²</th></tr></thead>
+        <tbody id="tb"></tbody>
+        <tfoot>
+          <tr><td></td><td>Жилая площадь</td><td class="a" id="tl"></td></tr>
+          <tr><td></td><td>Общая площадь помещений</td><td class="a" id="tt"></td></tr>
+        </tfoot>
+      </table>
+      <div class="note">Наведите на помещение — оно подсветится. Колёсико мыши или +/− — масштаб, перетаскивание — сдвиг плана.</div>
+    </div>
+  </div>
+</div>
+<script>
+const S=document.getElementById('plan'), NS='http://www.w3.org/2000/svg';
+function el(t,a,p=S){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+const layer=c=>el('g',{class:c});
+const r=(x1,y1,x2,y2)=>[[x1,y1],[x2,y1],[x2,y2],[x1,y2]];
+const pts=p=>p.map(q=>q.join(',')).join(' ');
+const fmt=v=>v.toFixed(2).replace('.',',');
+
+const C={living:'var(--c-living)',kitchen:'var(--c-kitchen)',wet:'var(--c-wet)',circ:'var(--c-circ)',util:'var(--c-util)',garage:'var(--c-garage)'};
+
+// ---------- массив стен ----------
+const gMass=layer('');
+[[0,0,10.96,9.20],[0,9.20,8.98,10.90],[10.96,-0.38,15.80,9.76],[8.14,-1.80,13.54,0]]
+  .forEach(b=>el('polygon',{points:pts(r(...b)),class:'mass'},gMass));
+
+// крыльцо
+const gP=layer('');
+el('rect',{x:8.98,y:9.20,width:2.15,height:1.90,class:'porch'},gP);
+[10.45,10.78].forEach(y=>el('line',{x1:8.98,y1:y,x2:11.13,y2:y,class:'fix'},gP));
+
+// ---------- режимы: ?before — как было до перепланировки, ?heat — отопление, ?embed — без навигации ----------
+const Q=new URLSearchParams(location.search), BEFORE=Q.has('before'), EMBED=Q.has('embed');
+
+// ---------- помещения ----------
+const roomsBefore=[
+ {n:'Жилая',a:20.98,t:'living',p:r(.38,5.15,4.28,10.52),l:[2.4,7.9]},
+ {n:'Жилая',a:16.64,t:'living',p:r(4.48,6.49,8.60,10.52),l:[6.45,8.5]},
+ {n:'Жилая',a:16.93,t:'living',p:r(.38,.38,4.28,5.03),l:[1.95,3.85]},
+ {n:'Кухня',a:13.72,t:'kitchen',p:r(4.48,.38,8.74,3.58),l:[6.6,2.1]},
+ {n:'Тамбур',a:7.97,t:'circ',p:[[8.86,.38],[10.96,.38],[10.96,4.29],[8.98,4.29],[8.98,3.58],[8.86,3.58]],l:[9.75,3.0],s:.65},
+ {n:'Коридор',a:10.14,t:'circ',p:r(4.48,3.70,8.60,6.37),l:[6.3,5.0]},
+ {n:'Прихожая',a:8.82,t:'circ',p:r(8.98,4.41,10.96,8.82),l:[9.6,7.6],s:.6},
+ {n:'Сени',a:6.67,t:'circ',p:[[8.52,-1.42],[13.16,-1.42],[13.16,-.38],[10.96,-.38],[10.96,0],[8.52,0]],l:[9.55,-.62],s:.8},
+ {n:'Коридор',a:4.68,t:'circ',p:r(11.36,0,13.15,2.62),l:[12.3,1.6],s:.7},
+ {n:'Постирочная',sub:'баня',a:7.86,t:'util',p:[[13.27,0],[15.42,0],[15.42,4.17],[14.22,4.17],[14.22,2.62],[13.27,2.62]],l:[14.38,1.6],s:.7},
+ {n:'Санузел',a:1.5,t:'wet',p:r(11.36,2.74,12.41,4.17),l:[11.88,3.08],s:.55},
+ {n:'Душевая',a:2.3,t:'wet',p:r(12.53,2.74,14.10,4.17),l:[12.95,3.3],s:.55},
+ {n:'Гараж',a:20.14,t:'garage',p:r(11.36,4.42,15.42,9.38),l:[13.39,6.9]},
+];
+const roomsAfter=[
+ {n:'Жилая 1',sub:'спальня',a:20.98,t:'living',p:r(.38,5.15,4.28,10.52),l:[2.5,6.05],s:.62},
+ {n:'Жилая 2',sub:'кабинет · детская · гостевая',a:16.64,t:'living',p:r(4.48,6.49,8.60,10.52),l:[6.45,8.25],s:.8},
+ {n:'Кухня-гостиная',a:32.25,t:'kitchen',p:[[.38,.38],[8.74,.38],[8.74,3.58],[4.28,3.58],[4.28,5.03],[.38,5.03]],l:[4.45,1.45],s:.8},
+ {n:'Котельная',sub:'газ · водоподготовка',a:7.97,t:'util',p:[[8.86,.38],[10.96,.38],[10.96,4.29],[8.98,4.29],[8.98,3.58],[8.86,3.58]],l:[9.9,2.86],s:.58},
+ {n:'Коридор',a:10.14,t:'circ',p:r(4.48,3.70,8.60,6.37),l:[6.3,5.0]},
+ {n:'Прихожая',a:8.82,t:'circ',p:r(8.98,4.41,10.96,8.82),l:[10.2,7.55],s:.6},
+ {n:'Сени',a:6.67,t:'circ',p:[[8.52,-1.42],[13.16,-1.42],[13.16,-.38],[10.96,-.38],[10.96,0],[8.52,0]],l:[9.55,-.62],s:.8},
+ {n:'Предбанник',a:2.21,t:'circ',p:r(11.36,1.37,13.06,2.67),l:[11.8,1.72],s:.5},
+ {n:'Туалет',a:2.13,t:'wet',p:r(11.36,0,13.06,1.25),l:[12.38,.62],s:.55},
+ {n:'Ванная',a:5.98,t:'wet',p:r(13.18,0,15.42,2.67),l:[14.3,1.4],s:.75},
+ {n:'Гараж',a:26.23,t:'garage',p:r(11.36,2.92,15.42,9.38),l:[13.39,8.88],s:.5},
+];
+const rooms=BEFORE?roomsBefore:roomsAfter;
+const gR=layer('');
+rooms.forEach((m,i)=>{
+  const g=el('g',{class:'room','data-i':i},gR);
+  el('polygon',{points:pts(m.p),class:'floor'},g);
+  el('polygon',{points:pts(m.p),class:'tint',fill:C[m.t]},g);
+  m.g=g;
+});
+
+// ---------- оборудование ----------
+const gF=layer('');
+// перегородка в сенях
+el('rect',{x:10.55,y:-1.42,width:.12,height:1.42,class:'mass'},gF);
+// перегородка в кухне
+el('rect',{x:8.74,y:.38,width:.12,height:2.37,class:'mass'},gF);
+// газовый котёл
+el('rect',{x:10.42,y:.5,width:.5,height:.8,rx:.04,class:'fix',fill:'var(--floor)'},gF);
+el('circle',{cx:10.67,cy:.9,r:.15,class:'fix'},gF);
+el('path',{d:'M10.67 .79 C10.6 .88 10.58 .96 10.67 1.0 C10.76 .96 10.74 .88 10.67 .79 Z',class:'fix'},gF);
+if(BEFORE){
+  // печь между жилой и кухней
+  el('rect',{x:3.3,y:1.6,width:1.1,height:1.3,class:'fixf'},gF);
+  el('rect',{x:3.5,y:1.85,width:.6,height:.55,class:'fix'},gF);
+  el('rect',{x:4.40,y:1.9,width:.35,height:.7,class:'fixf'},gF);
+  // унитаз и душ в старых санузлах
+  el('rect',{x:11.66,y:3.95,width:.46,height:.18,rx:.03,class:'fix'},gF);
+  el('ellipse',{cx:11.89,cy:3.68,rx:.19,ry:.26,class:'fix'},gF);
+  el('path',{d:'M13.35 4.12 V3.42 A.335 .335 0 0 1 14.02 3.42 V4.12 Z',class:'fix'},gF);
+  el('circle',{cx:13.685,cy:3.72,r:.05,class:'fix'},gF);
+}
+// вентканал
+el('rect',{x:8.55,y:2.75,width:.5,height:.83,class:'fixf'},gF);
+el('rect',{x:8.65,y:2.9,width:.3,height:.22,class:'fix',fill:'var(--floor)'},gF);
+el('rect',{x:8.65,y:3.22,width:.3,height:.22,class:'fix',fill:'var(--floor)'},gF);
+// лестница в прихожей
+// Г-образная: марш вдоль стены гаража вверх, площадка, поворот налево
+el('rect',{x:10.06,y:5.35,width:.9,height:1.8,class:'fix'},gF);
+for(let y=5.6;y<7.15;y+=.25) el('line',{x1:10.06,y1:y,x2:10.96,y2:y,class:'fix'},gF);
+el('rect',{x:10.06,y:4.45,width:.9,height:.9,class:'fix'},gF);
+el('rect',{x:8.98,y:4.45,width:1.08,height:.9,class:'fix'},gF);
+for(let x=9.06;x<10.06;x+=.25) el('line',{x1:x,y1:4.45,x2:x,y2:5.35,class:'fix'},gF);
+el('polyline',{points:'10.51,7.02 10.51,4.9 9.12,4.9',class:'fix'},gF);
+el('polyline',{points:'9.32,4.79 9.1,4.9 9.32,5.01',class:'fix'},gF);
+el('circle',{cx:10.51,cy:7.02,r:.05,class:'fix'},gF);
+// ступени в сенях
+for(let y=-1.42;y<=-.5;y+=.23) el('line',{x1:11.45,y1:y,x2:12.35,y2:y,class:'fix'},gF);
+el('rect',{x:11.45,y:-1.42,width:.9,height:.92,class:'fix'},gF);
+el('polyline',{points:'11.9,-1.3 11.9,-.62',class:'fix'},gF);
+el('polyline',{points:'11.8,-.78 11.9,-.6 12.0,-.78',class:'fix'},gF);
+
+// ---------- проёмы ----------
+const gO=layer('');
+function door(o,w0,t,from,len,hinge,dir){
+  let cx,cy,leaf,closed;
+  if(o==='h'){
+    el('rect',{x:from,y:w0-.005,width:len,height:t+.01,class:'gap'},gO);
+    const e=dir>0?w0+t:w0, hx=hinge==='a'?from:from+len, ox=hinge==='a'?from+len:from;
+    cx=hx;cy=e;leaf=[hx,e+dir*len];closed=[ox,e];
+  }else{
+    el('rect',{x:w0-.005,y:from,width:t+.01,height:len,class:'gap'},gO);
+    const e=dir>0?w0+t:w0, hy=hinge==='a'?from:from+len, oy=hinge==='a'?from+len:from;
+    cx=e;cy=hy;leaf=[e+dir*len,hy];closed=[e,oy];
+  }
+  const ax=closed[0]-cx,ay=closed[1]-cy,bx=leaf[0]-cx,by=leaf[1]-cy;
+  const sw=(ax*by-ay*bx)>0?1:0;
+  el('line',{x1:cx,y1:cy,x2:leaf[0],y2:leaf[1],class:'leaf'},gO);
+  el('path',{d:`M${closed[0]} ${closed[1]} A${len} ${len} 0 0 ${sw} ${leaf[0]} ${leaf[1]}`,class:'arc'},gO);
+}
+function win(o,w0,t,from,len){
+  if(o==='h'){
+    el('rect',{x:from,y:w0,width:len,height:t,class:'win'},gO);
+    el('line',{x1:from,y1:w0+t/2,x2:from+len,y2:w0+t/2,class:'winl'},gO);
+  }else{
+    el('rect',{x:w0,y:from,width:t,height:len,class:'win'},gO);
+    el('line',{x1:w0+t/2,y1:from,x2:w0+t/2,y2:from+len,class:'winl'},gO);
+  }
+}
+door('h',-1.80,.38,9.25,.85,'a',-1);    // вход в сени (наружу)
+door('h',0,.38,9.45,.8,'b',1);          // сени → кухня
+door('v',10.55,.12,-1.42,.75,'b',1);    // дверь в перегородке сеней
+door('v',10.96,.40,1.4,.8,'b',-1);      // кухня → коридор у постирочной
+if(BEFORE){
+  door('h',2.62,.12,11.5,.7,'a',-1);    // коридор → санузел
+  door('h',2.62,.12,12.53,.6,'b',-1);   // коридор → душевая
+  door('v',13.15,.12,.5,.8,'a',1);      // коридор → постирочная
+  door('v',4.28,.2,4.0,.8,'b',-1);      // коридор → жилая 16,93
+}else{
+  door('h',1.25,.12,12.2,.7,'b',1);     // туалет → предбанник (наружу)
+  door('v',13.06,.12,1.6,.75,'a',1);    // предбанник → ванная
+}
+door('h',3.58,.12,7.4,.8,'b',1);        // кухня → коридор
+door('v',8.74,.12,1.85,.8,'b',1);      // дверь в перегородке кухни
+door('v',4.28,.2,5.35,.8,'a',-1);       // коридор → жилая 20,98
+door('h',6.37,.12,7.3,.8,'b',1);        // коридор → жилая 16,64
+door('v',8.60,.38,5.5,.8,'a',1);        // коридор → прихожая
+if(!BEFORE) door('v',10.96,.40,7.45,.8,'a',1);      // прихожая → гараж (открывается в гараж)
+door('h',8.82,.38,9.08,.9,'a',1);       // вход в прихожую (левая часть, как на фото)
+// окно из стеклоблоков справа от входа
+el('rect',{x:10.285,y:8.82,width:.43,height:.38,class:'win'},gO);
+el('line',{x1:10.5,y1:8.82,x2:10.5,y2:9.2,class:'winl'},gO);
+// ворота гаража
+door('h',9.38,.38,12.4,1.3,'a',1);      // распашные ворота, левая створка
+door('h',9.38,.38,13.7,1.3,'b',1);      // правая створка
+win('v',0,.38,1.7,1.3); win('v',0,.38,6.0,1.3);
+win('h',-1.80,.38,11.6,.65);   // маленькое низкое окно в сенях (по фото)
+win('h',-.38,.38,14.35,.75);   // окно ванной (бывшей бани)
+win('h',-.38,.38,12.3,.5);     // окно под потолком над крышей сеней — теперь в туалете
+win('h',0,.38,5.5,1.2); win('h',10.52,.38,5.9,1.2); win('h',10.52,.38,1.65,1.3);
+
+// ---------- размеры ----------
+const gD=layer('');
+function dim(x1,y1,x2,y2,lab,{out=false,t=.5,side=-1}={}){
+  el('line',{x1,y1,x2,y2,class:'dl'},gD);
+  [[x1,y1],[x2,y2]].forEach(([x,y])=>el('line',{x1:x-.1,y1:y+.1,x2:x+.1,y2:y-.1,class:'dt'},gD));
+  const tx=x1+(x2-x1)*t, ty=y1+(y2-y1)*t, off=out?.1:.07;
+  const tt=el('text',{class:'dx'+(out?' out':'')},gD); tt.textContent=lab;
+  if(y1===y2){tt.setAttribute('x',tx);tt.setAttribute('y',ty-off);}
+  else{
+    const fx=side<0?tx-off:tx+off+(out?.32:.24)*.75;
+    tt.setAttribute('x',fx);tt.setAttribute('y',ty);
+    tt.setAttribute('transform',`rotate(-90 ${fx} ${ty})`);
+  }
+}
+const ext=(x1,y1,x2,y2)=>el('line',{x1,y1,x2,y2,class:'dl'},gD);
+// наружные
+ext(0,-.15,0,-2.65); ext(8.14,-1.95,8.14,-2.65); ext(13.54,-1.95,13.54,-2.65);
+dim(0,-2.5,8.14,-2.5,'8.14',{out:1}); dim(8.14,-2.5,13.54,-2.5,'5.40',{out:1});
+ext(7.95,-1.8,7.45,-1.8); ext(7.95,0,7.45,0); dim(7.6,-1.8,7.6,0,'1.80',{out:1});
+ext(-.15,0,-1.05,0); ext(-.15,10.9,-1.05,10.9); dim(-.9,0,-.9,10.9,'10.90',{out:1});
+ext(0,11.05,0,12.05); ext(8.98,11.05,8.98,12.05); ext(11.13,11.25,11.13,12.05);
+dim(0,11.9,8.98,11.9,'8.98',{out:1}); dim(8.98,11.9,11.13,11.9,'2.15',{out:1});
+ext(15.95,-.38,16.75,-.38); ext(15.95,9.76,16.75,9.76); dim(16.6,-.38,16.6,9.76,'9.46',{out:1,side:1});
+// внутренние
+ext(-.15,5.03,-.6,5.03); ext(-.15,5.15,-.6,5.15);
+dim(-.45,.38,-.45,5.03,'4.65'); dim(-.45,5.15,-.45,10.52,'5.38');
+dim(.38,9.98,4.28,9.98,'3.90',{t:.65});
+dim(4.48,7.5,8.60,7.5,'4.12',{t:.45});
+dim(5.2,6.49,5.2,10.52,'4.04',{t:.66});
+dim(4.48,5.7,8.60,5.7,'4.12',{t:.55});
+dim(5.15,3.70,5.15,6.37,'2.46',{side:1,t:.62});
+dim(10.15,.38,10.15,4.29,'3.91',{t:.25});
+dim(8.98,3.66,10.96,3.66,'1.98',{t:.3});
+dim(9.2,4.41,9.2,8.82,'4.41',{t:.5,side:1});
+dim(8.98,8.5,10.96,8.5,'2.0');
+dim(10.85,9.20,10.85,11.10,'2',{t:.62});
+if(BEFORE){
+  dim(11.75,4.42,11.75,9.38,'4.96',{side:1});
+  dim(11.36,9.0,15.42,9.0,'4.06');
+  dim(11.36,1.0,13.15,1.0,'1.79',{t:.62});
+  dim(13.27,.3,15.42,.3,'2.13',{t:.6});
+  dim(15.1,0,15.1,4.17,'4.17',{t:.8});
+}else{
+  dim(11.75,2.92,11.75,9.38,'6.46',{side:1});
+  dim(11.36,3.3,15.42,3.3,'4.06',{t:.2});
+  dim(11.36,2.15,13.06,2.15,'1.70',{t:.3});
+  dim(13.18,2.3,15.42,2.3,'2.24',{t:.6});
+  dim(13.45,0,13.45,2.67,'2.67',{t:.5,side:1});
+}
+
+// ---------- мебель: спальня ----------
+const gM=layer('');
+const fr=(x,y,w,h,c='furn',rx=.04)=>el('rect',{x,y,width:w,height:h,rx,class:c},gM);
+const ft=(x,y,t)=>{const e=el('text',{x,y,class:'ft'},gM);e.textContent=t};
+// ковёр
+el('rect',{x:1.55,y:6.8,width:2.5,height:2.5,rx:.08,class:'rug'},gM);
+// шкаф-купе вдоль верхней стены
+fr(.45,5.15,2.9,.6,'furn',.02);
+el('line',{x1:.5,y1:5.6,x2:1.95,y2:5.6,class:'fl'},gM);
+el('line',{x1:1.85,y1:5.67,x2:3.3,y2:5.67,class:'fl'},gM);
+el('line',{x1:.55,y1:5.38,x2:3.25,y2:5.38,class:'fl','stroke-dasharray':'.05 .04'},gM);
+ft(1.9,5.32,'шкаф-купе');
+// кровать 200×200 — изголовьем к стене жилой 2
+fr(2.28,7.05,2.0,2.0,'furn',.06);
+fr(4.13,7.05,.15,2.0,'furn',.02);
+el('path',{d:'M3.43 7.1 H2.41 Q2.33 7.1 2.33 7.18 V8.92 Q2.33 9.0 2.41 9.0 H3.43 Z',class:'blanket'},gM);
+el('path',{d:'M3.43 7.1 L3.43 7.47 L3.06 7.1 Z',class:'fold'},gM);
+[7.15,8.1].forEach(y=>fr(3.62,y,.43,.85,'pillow',.1));
+// тумбочки с лампами
+[6.55,9.1].forEach(y=>{fr(3.83,y,.45,.45,'furn',.03);el('circle',{cx:4.08,cy:y+.225,r:.11,class:'lamp'},gM)});
+// ТВ на стене напротив кровати + комод под ним
+fr(.38,7.25,.48,1.6,'furn',.02);
+[7.78,8.32].forEach(y=>el('line',{x1:.42,y1:y,x2:.82,y2:y,class:'fl'},gM));
+fr(.38,7.4,.09,1.3,'tv',.01);
+ft(1.12,7.93,'ТВ'); ft(1.12,8.18,'комод');
+// кресло у окна + торшер
+fr(.5,6.2,.75,.75,'pillow',.14);
+fr(.5,6.2,.2,.75,'furn',.08);
+el('circle',{cx:1.45,cy:6.35,r:.12,class:'lamp'},gM);
+// бельевая корзина в углу
+el('circle',{cx:3.95,cy:10.15,r:.2,class:'pillow'},gM);
+// туалетный столик под окном + пуф
+fr(1.75,10.07,1.1,.45,'furn',.02);
+el('line',{x1:1.9,y1:10.46,x2:2.7,y2:10.46,class:'fl'},gM);
+el('circle',{cx:2.3,cy:9.8,r:.18,class:'pillow'},gM);
+ft(2.3,10.33,'столик');
+// растение в левом нижнем углу
+{const cx=.8,cy=10.08,g=el('g',{},gM);
+ for(let k=0;k<7;k++){const a=k*360/7+10;
+   el('ellipse',{cx:cx,cy:cy-.2,rx:.09,ry:.2,class:'leaf2',transform:`rotate(${a} ${cx} ${cy})`},g);}
+ el('circle',{cx,cy,r:.13,class:'pot'},g);}
+
+// ---------- мебель: кухня-гостиная ----------
+// кухня: столешница вдоль верхней стены
+fr(4.9,.38,3.24,.6,'furn',.02);
+// мойка под окном
+fr(5.85,.47,.5,.42,'pillow',.06); el('circle',{cx:6.1,cy:.68,r:.04,class:'fl',fill:'none'},gM);
+// посудомойка
+el('rect',{x:6.42,y:.42,width:.45,height:.52,class:'fl',fill:'none','stroke-dasharray':'.04 .03'},gM); ft(6.645,.73,'ПММ');
+// газовая варочная панель
+fr(7.25,.44,.6,.5,'pillow',.03);
+[[7.4,.58],[7.7,.58],[7.4,.82],[7.7,.82]].forEach(([x,y])=>el('circle',{cx:x,cy:y,r:.08,class:'fl',fill:'none'},gM));
+// холодильник
+fr(8.14,.38,.6,.65,'pillow',.03); ft(8.44,.75,'холод.');
+// столешница у перегородки
+fr(8.14,1.03,.6,.77,'furn',.02);
+// остров
+fr(5.4,1.95,2.0,.9,'furn',.04); ft(6.4,2.45,'остров');
+[5.9,6.4,6.9].forEach(x=>el('circle',{cx:x,cy:3.12,r:.17,class:'pillow'},gM));
+// гостиная: обеденный стол на 6
+fr(1.3,.88,1.6,.85,'furn',.06);
+[[1.7,.62],[2.5,.62],[1.7,1.98],[2.5,1.98],[1.04,1.3],[3.16,1.3]].forEach(([x,y])=>fr(x-.2,y-.2,.4,.4,'pillow',.06));
+// диван, журнальный столик
+fr(.75,2.35,2.7,.95,'furn',.12);
+fr(.75,2.35,2.7,.25,'furn',.08);
+fr(.75,2.35,.22,.95,'furn',.08); fr(3.23,2.35,.22,.95,'furn',.08);
+fr(1.5,3.6,1.2,.5,'pillow',.06);
+// ТВ на стене + тумба
+fr(.95,4.6,2.3,.43,'furn',.02);
+fr(1.45,4.95,1.3,.08,'tv',.01); ft(2.1,4.88,'ТВ');
+// ковёр под гостиной зоной
+el('rect',{x:1.1,y:3.4,width:2.0,height:.9,rx:.08,class:'rug'},gM);
+
+// ---------- мебель: коридор ----------
+// дорожка
+el('rect',{x:5.0,y:4.45,width:3.2,height:.85,rx:.06,class:'rug'},gM);
+// шкаф вдоль стены кухни
+fr(4.48,3.70,2.8,.45,'furn',.02);
+el('line',{x1:5.88,y1:3.74,x2:5.88,y2:4.11,class:'fl'},gM);
+ft(5.18,3.98,'шкаф'); ft(6.58,3.98,'шкаф');
+// банкетка
+fr(4.48,4.3,.4,.9,'pillow',.06);
+// консоль с зеркалом и лампой
+fr(5.6,6.0,1.3,.37,'furn',.02);
+el('line',{x1:5.7,y1:6.33,x2:6.8,y2:6.33,class:'fl'},gM);
+el('circle',{cx:6.65,cy:6.18,r:.09,class:'lamp'},gM);
+// растение в углу
+{const cx=8.3,cy=4.85,g=el('g',{},gM);
+ for(let k=0;k<7;k++){const a=k*360/7+10;
+   el('ellipse',{cx:cx,cy:cy-.16,rx:.07,ry:.16,class:'leaf2',transform:`rotate(${a} ${cx} ${cy})`},g);}
+ el('circle',{cx,cy,r:.1,class:'pot'},g);}
+
+// ---------- мебель: прихожая ----------
+// вешалка на стене у входа
+fr(9.0,8.05,.35,.7,'furn',.02);
+[8.2,8.4,8.6].forEach(y=>el('circle',{cx:9.1,cy:y,r:.035,class:'fl',fill:'none'},gM));
+// обувница с сиденьем у левой стены, над ней зеркало
+fr(8.98,6.8,.4,.9,'pillow',.05);
+[7.1,7.4].forEach(y=>el('line',{x1:9.02,y1:y,x2:9.34,y2:y,class:'fl'},gM));
+fr(8.98,6.75,.05,1.0,'tv',.01);
+// коврик у входа
+el('rect',{x:9.4,y:8.15,width:.95,height:.6,rx:.05,class:'rug'},gM);
+// подписи
+{const t=(x,y,txt,r)=>{const e=el('text',{x,y,class:'ft',transform:`rotate(-90 ${x} ${y})`},gM);e.textContent=txt};
+ t(9.5,7.25,'обувница · зеркало'); t(9.48,8.4,'вешалка');}
+
+ft(11.9,-.42,'в погреб');
+
+// ---------- оборудование котельной ----------
+// одноконтурный котёл 24 кВт + бойлер косвенного нагрева 150 л с ТЭНом
+ft(10.67,1.44,'котёл 24 кВт');
+el('circle',{cx:10.55,cy:3.95,r:.25,class:'tub'},gM); ft(10.55,3.99,'бойлер');
+// фильтры (обезжелезиватель, умягчитель) + солевой бак
+[9.3,9.62].forEach(x=>el('circle',{cx:x,cy:4.03,r:.13,class:'tub'},gM));
+ft(9.46,3.84,'фильтры');
+fr(9.86,3.84,.36,.36,'tub',.04); ft(10.04,4.06,'соль');
+// гидроаккумулятор / расширительный бак
+el('circle',{cx:10.72,cy:2.55,r:.18,class:'tub'},gM);
+// подвод воды и газа
+el('line',{x1:10.67,y1:1.3,x2:10.67,y2:2.37,class:'fl','stroke-dasharray':'.04 .03'},gM);
+
+// ---------- мебель: санузлы ----------
+// туалет: унитаз у верхней стены + маленькая раковина
+fr(11.63,0,.44,.2,'pillow',.03);
+el('ellipse',{cx:11.85,cy:.47,rx:.18,ry:.26,class:'pillow'},gM);
+fr(12.66,.12,.4,.36,'pillow',.08);
+el('ellipse',{cx:12.86,cy:.3,rx:.1,ry:.13,class:'fl',fill:'none'},gM);
+// предбанник: шкаф у стены гаража
+fr(11.9,2.25,1.16,.42,'furn',.02);
+el('line',{x1:12.48,y1:2.29,x2:12.48,y2:2.63,class:'fl'},gM);
+ft(12.48,2.52,'шкаф');
+// ванная: ванна 160×75 у верхней стены
+fr(13.82,0,1.6,.75,'pillow',.12);
+fr(13.92,.08,1.4,.59,'tub',.25);
+el('circle',{cx:15.17,cy:.375,r:.04,class:'fl',fill:'none'},gM);
+// стиральная + сушильная (колонной) в углу
+fr(13.2,0,.6,.6,'furn',.03);
+el('circle',{cx:13.5,cy:.3,r:.2,class:'fl',fill:'none'},gM);
+ft(13.5,.72,'стир./суш.');
+// тумба с раковиной на правой стене
+fr(14.9,1.0,.52,.9,'pillow',.04);
+el('ellipse',{cx:15.17,cy:1.45,rx:.15,ry:.24,class:'fl',fill:'none'},gM);
+// полотенцесушитель
+fr(14.3,2.59,.55,.08,'furn',.02);
+
+// ---------- мебель: кабинет (жилая 2) ----------
+// ковёр
+el('rect',{x:5.3,y:7.75,width:2.15,height:1.55,rx:.08,class:'rug'},gM);
+// стеллаж для книг вдоль левой стены
+fr(4.48,6.8,.35,2.4,'furn',.02);
+[7.4,8.0,8.6].forEach(y=>el('line',{x1:4.52,y1:y,x2:4.79,y2:y,class:'fl'},gM));
+{const e=el('text',{x:4.72,y:8.0,class:'ft',transform:'rotate(-90 4.72 8.0)'},gM);e.textContent='стеллаж';}
+// письменный стол под окном + кресло
+fr(5.8,9.82,1.4,.7,'furn',.02);
+fr(6.15,10.05,.7,.4,'tv',.02);                 // монитор/ноутбук
+el('circle',{cx:6.5,cy:9.42,r:.26,class:'pillow'},gM);
+fr(6.28,9.1,.44,.12,'furn',.04);               // спинка кресла
+ft(6.5,9.98,'стол');
+// тумба для принтера и бумаг
+fr(5.95,6.49,1.0,.42,'furn',.02); ft(6.45,6.75,'тумба');
+// кресло для чтения + торшер
+fr(5.15,6.62,.72,.72,'pillow',.14); fr(5.15,6.62,.72,.2,'furn',.08);
+el('circle',{cx:5.25,cy:7.52,r:.11,class:'lamp'},gM);
+// диван-кровать у стены прихожей (гостевое место)
+fr(7.7,7.55,.9,2.0,'furn',.12);
+fr(8.38,7.55,.22,2.0,'furn',.08);
+fr(7.7,7.55,.9,.2,'furn',.08); fr(7.7,9.35,.9,.2,'furn',.08);
+{const e=el('text',{x:8.1,y:8.55,class:'ft',transform:'rotate(-90 8.1 8.55)'},gM);e.textContent='диван-кровать';}
+// растение
+{const cx=4.85,cy=10.12,g=el('g',{},gM);
+ for(let k=0;k<7;k++){const a=k*360/7+10;
+   el('ellipse',{cx:cx,cy:cy-.16,rx:.07,ry:.16,class:'leaf2',transform:`rotate(${a} ${cx} ${cy})`},g);}
+ el('circle',{cx,cy,r:.1,class:'pot'},g);}
+
+// ---------- гараж: Opel Omega B седан (4788 × 1786, база 2730) ----------
+// машина ровно по центру гаража (11.36…15.42 × 2.92…9.38)
+{const W=1.786, Lc=4.788, cx=(11.36+15.42)/2, y0=(2.92+9.38)/2-Lc/2, x0=cx-W/2, g=el('g',{},gM);
+ const rr=(x,y,w,h,c,rx=.05)=>el('rect',{x,y,width:w,height:h,rx,class:c},g);
+ // колёса
+ [y0+.95, y0+.95+2.73].forEach(ay=>[x0-.03, x0+W-.19].forEach(wx=>rr(wx,ay-.32,.22,.64,'tyre',.06)));
+ // кузов
+ rr(x0,y0,W,Lc,'car',.32);
+ // зеркала
+ rr(x0-.13,y0+1.55,.16,.12,'car',.03); rr(x0+W-.03,y0+1.55,.16,.12,'car',.03);
+ // лобовое, крыша, заднее стекло
+ el('path',{d:`M${x0+.12} ${y0+1.85} L${x0+.3} ${y0+1.35} H${x0+W-.3} L${x0+W-.12} ${y0+1.85} Z`,class:'cglass'},g);
+ rr(x0+.14,y0+1.9,W-.28,1.45,'carroof',.08);
+ el('path',{d:`M${x0+.14} ${y0+3.4} H${x0+W-.14} L${x0+W-.3} ${y0+3.85} H${x0+.3} Z`,class:'cglass'},g);
+ // боковые стёкла
+ rr(x0+.05,y0+1.95,.07,1.35,'cglass',.02); rr(x0+W-.12,y0+1.95,.07,1.35,'cglass',.02);
+ // фары / фонари
+ rr(x0+.12,y0+.04,.38,.1,'lamp',.03); rr(x0+W-.5,y0+.04,.38,.1,'lamp',.03);
+ rr(x0+.12,y0+Lc-.14,.38,.1,'tail',.03); rr(x0+W-.5,y0+Lc-.14,.38,.1,'tail',.03);
+ // двери открыты полностью (~65°): передние ~1,10 м, задние ~0,85 м, петли спереди
+ const wallL=11.36, wallR=15.42, T=.08, A=65*Math.PI/180;
+ const door=(side,hy,L)=>{
+   const hx=side<0?x0:x0+W, room=side<0?hx-wallL:wallR-hx, reach=L*Math.sin(A)+.03, over=reach-room;
+   el('path',{d:`M${hx} ${hy+L} A${L} ${L} 0 0 ${side<0?1:0} ${hx+side*L*Math.sin(A)} ${hy+L*Math.cos(A)}`,class:'arc'},g);
+   el('rect',{x:hx-T/2,y:hy,width:T,height:L,rx:.02,class:over>.005?'car hit':'car',transform:`rotate(${-side*65} ${hx} ${hy})`},g);
+   return over;
+ };
+ door(-1,y0+1.45,1.1); door(-1,y0+2.6,.85); door(1,y0+2.6,.85);
+ const over=door(1,y0+1.45,1.1);
+ if(over>.005){const e=el('text',{x:15.0,y:y0+1.2,class:'ft hitt'},g);e.textContent='заходит в стену на '+Math.round(over*100)+' см';}
+ const t=el('text',{x:cx,y:y0+2.62,class:'ft'},g); t.textContent='Opel Omega B';
+ const t2=el('text',{x:cx,y:y0+2.82,class:'ft'},g); t2.textContent='4,79 × 1,79 м';
+}
+// зазоры (переносим в слой мебели, чтобы скрывались вместе с машиной)
+const nD0=gD.childNodes.length;
+dim(11.36,6.9,12.497,6.9,'1.14',{t:.5});
+dim(14.283,6.9,15.42,6.9,'1.14',{t:.5});
+dim(14.95,2.92,14.95,3.756,'0.84',{t:.5});
+dim(14.95,8.544,14.95,9.38,'0.84',{t:.5});
+[...gD.childNodes].slice(nD0).forEach(n=>gM.appendChild(n));
+
+// ---------- режим «Отопление»: без мебели, с разводкой ----------
+const HEAT=Q.has('heat')&&!BEFORE;
+document.getElementById(HEAT?'navHeat':'navPlan').classList.add('cur');
+if(EMBED){['.nav','header','#roomCard'].forEach(q=>{const e=document.querySelector(q);if(e)e.style.display='none'});
+  document.body.style.paddingBlock='8px';}
+if(BEFORE){
+  gM.style.display='none';
+  document.querySelector('h1').textContent='Как было';
+  document.querySelector('header .sub').textContent='До перепланировки · по техпаспорту и замерам';
+  document.title='Как было';
+}else if(EMBED){
+  document.querySelector('h1').textContent='Как будет';
+  document.querySelector('header .sub').textContent='После перепланировки';
+}
+if(HEAT){
+  gM.style.display='none';
+  document.querySelector('h1').textContent='Отопление';
+  document.querySelector('header .sub').textContent='Разводка радиаторов от газового котла · без мебели';
+  document.title='Отопление';
+  document.getElementById('heatCard').hidden=false;
+  document.getElementById('roomCard').hidden=true;
+  const gH=layer('');
+  const pl=(pts,c)=>el('polyline',{points:pts.map(p=>p.join(',')).join(' '),class:c},gH);
+  const off=(pts,d=.07)=>pts.map(([x,y])=>[x+d,y+d]);
+  // магистрали: подача + обратка рядом
+  // короткие тупиковые ветки: прихожая, коридор (из прихожей сквозь стену), санузлы, гараж
+  const BR={
+    hall:[[10.85,1.3],[10.85,7.3]],
+    corr:[[10.85,4.9],[8.3,4.9],[8.3,3.9]],
+    bath:[[10.85,2.38],[14.9,2.38]],
+    gar:[[12.5,2.38],[12.5,3.22],[14.25,3.22]],
+  };
+  Object.values(BR).forEach(p=>{pl(off(p),'ret');pl(p,'sup')});
+  // у двери в гараж ветка прихожей ныряет под пол
+  {const p=[[10.85,7.3],[10.85,8.55],[10.2,8.55]];pl(off(p),'ret dash');pl(p,'sup dash');}
+  // западная ветка — попутная (петля Тихельмана): подача и обратка идут в одну сторону,
+  // обратка начинается у первого радиатора и после последнего возвращается к котлу под полом
+  pl([[6.72,.72],[.67,.72],[.67,10.29],[7.17,10.29]],'ret');
+  pl([[7.17,10.29],[8.15,10.29],[8.15,3.95],[10.55,3.95],[10.55,1.3]],'ret dash');
+  pl([[10.42,.65],[.6,.65],[.6,10.22],[7.1,10.22]],'sup');
+  {const t=el('text',{x:8.02,y:8.3,class:'rl',style:'fill:#3d7fe0',transform:'rotate(-90 8.02 8.3)'},gH);t.textContent='обратка под полом';}
+  // радиаторы: [№, комната, ориентация, x1,y1,x2,y2 (корпус), кВт, к какой линии подключать]
+  const R=[
+    ['Кухня-гостиная','h',5.55,.43,6.65,.53,1.6,.65],
+    ['Кухня-гостиная','v',.43,1.75,.53,2.95,1.6,.6],
+    ['Спальня','v',.43,6.05,.53,7.25,1.0,.6],
+    ['Спальня','h',1.7,10.37,2.9,10.47,1.1,10.22],
+    ['Кабинет (жилая 2)','h',5.95,10.37,7.05,10.47,1.7,10.22],
+    ['Коридор','v',8.45,3.9,8.55,4.8,1.0,8.3],
+    ['Прихожая','h',10.2,8.67,10.8,8.77,.9,8.55],
+    ['Предбанник','h',11.5,2.52,12.0,2.62,.3,2.38],
+    ['Ванная (полотенцесушитель-радиатор)','h',14.2,2.52,14.9,2.62,.6,2.38],
+    ['Гараж (поддержание +10…+12 °C)','h',12.6,2.97,14.2,3.07,2.0,3.22],
+    // мансарда (в будущем): плана нет, только расчёт и стояк; под скатами теплопотери выше — ~120 Вт/м²
+    ['Мансарда, комната 1 · 13 м² (в будущем)','-',0,0,1.2,0,1.6,0],
+    ['Мансарда, комната 2 · 13 м² (в будущем)','-',0,0,1.2,0,1.6,0],
+    ['Мансарда, туалет (в будущем, полотенцесушитель)','-',0,0,.5,0,.4,0],
+  ];
+  const htb=document.getElementById('htb');let tot=0;
+  R.forEach(([room,o,x1,y1,x2,y2,kw,line],i)=>{
+    if(o==='-'){tot+=kw;const tr=document.createElement('tr');tr.className='future';
+      tr.innerHTML=`<td class="n">Р${i+1}</td><td>${room}</td><td class="a">≈${(x2-x1).toFixed(1).replace('.',',')} м</td><td class="a">${kw.toFixed(1).replace('.',',')} кВт</td>`;
+      htb.appendChild(tr);return;}
+    el('rect',{x:x1,y:y1,width:x2-x1,height:y2-y1,rx:.02,class:'rad'},gH);
+    if(o==='h'){for(let x=x1+.08;x<x2-.04;x+=.08)el('line',{x1:x,y1,x2:x,y2,class:'radf'},gH);
+      const yy=line<y1?y1:y2;                       // к какой стороне подходит труба
+      el('line',{x1:x1+.04,y1:yy,x2:x1+.04,y2:line,class:'sup'},gH);
+      el('line',{x1:x2-.04,y1:yy,x2:x2-.04,y2:line+.07,class:'ret'},gH);
+      const t=el('text',{x:(x1+x2)/2,y:line<y1?line-.08:line+.3,class:'rl'},gH);t.textContent='Р'+(i+1)+' · '+kw.toFixed(1).replace('.',',')+' кВт';}
+    else{for(let y=y1+.08;y<y2-.04;y+=.08)el('line',{x1,y1:y,x2,y2:y,class:'radf'},gH);
+      const xs=line<x1?x1:x2;                         // с какой стороны подходят трубы
+      el('line',{x1:xs,y1:y1+.04,x2:line,y2:y1+.04,class:'sup'},gH);
+      el('line',{x1:xs,y1:y2-.04,x2:line+.07,y2:y2-.04,class:'ret'},gH);
+      const tx=line<x1?line-.12:x2+.3,ty=(y1+y2)/2,t=el('text',{x:tx,y:ty,class:'rl',transform:`rotate(-90 ${tx} ${ty})`},gH);t.textContent='Р'+(i+1)+' · '+kw.toFixed(1).replace('.',',')+' кВт';}
+    const len=o==='h'?x2-x1:y2-y1; tot+=kw;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="n">Р${i+1}</td><td>${room}</td><td class="a">${len.toFixed(2).replace('.',',')} м</td><td class="a">${kw.toFixed(1).replace('.',',')} кВт</td>`;
+    htb.appendChild(tr);
+  });
+  document.getElementById('htt').textContent=tot.toFixed(1).replace('.',',')+' кВт';
+  // бойлер косвенного нагрева 150 л в нише котельной + трёхходовой клапан под котлом
+  el('circle',{cx:10.55,cy:3.95,r:.25,class:'boiler'},gH);
+  {const t=el('text',{x:10.55,y:3.92,class:'rl',style:'fill:#e08a2d'},gH);t.textContent='бойлер';
+   const t2=el('text',{x:10.55,y:4.12,class:'rl',style:'fill:#e08a2d'},gH);t2.textContent='150 л';}
+  el('path',{d:'M10.62 1.42 L10.78 1.5 L10.62 1.58 Z M10.94 1.42 L10.78 1.5 L10.94 1.58 Z',class:'valve'},gH);
+  {const t=el('text',{x:10.25,y:1.72,class:'rl',style:'fill:#e08a2d'},gH);t.textContent='3-ход. клапан';}
+  pl([[10.72,1.58],[10.72,3.7]],'dhw');
+  pl([[10.66,1.3],[10.66,3.72]],'dhw dash');
+  {const t=el('text',{x:9.62,y:4.0,class:'rl',style:'fill:#e08a2d;font-size:.14px'},gH);t.textContent='ГВС → кухня, с/у';}
+  // стояк на мансарду — из ниши котельной у площадки лестницы
+  el('circle',{cx:10.85,cy:4.12,r:.07,class:'sup',fill:'var(--floor)'},gH);
+  el('circle',{cx:10.92,cy:4.19,r:.07,class:'ret',fill:'var(--floor)'},gH);
+  {const t=el('text',{x:9.62,y:4.2,class:'rl',style:'font-size:.14px'},gH);t.textContent='стояк ↑ мансарда';}
+  // котёл — подпись
+  const kt=el('text',{x:10.0,y:1.0,class:'rl'},gH);kt.textContent='котёл 24 кВт';
+  // не отапливаются
+  [[10.3,-1.05,'не отапл.']].forEach(([x,y,t])=>{const e=el('text',{x,y,class:'ft'},gH);e.textContent=t});
+  // легенда
+  const lg=el('g',{transform:'translate(-1.6 12.35)'},gH);
+  el('line',{x1:0,y1:0,x2:.5,y2:0,class:'sup'},lg); {const e=el('text',{x:.6,y:.06,class:'ft',style:'text-anchor:start'},lg);e.textContent='подача';}
+  el('line',{x1:1.6,y1:0,x2:2.1,y2:0,class:'ret'},lg); {const e=el('text',{x:2.2,y:.06,class:'ft',style:'text-anchor:start'},lg);e.textContent='обратка';}
+  el('rect',{x:3.3,y:-.06,width:.5,height:.12,class:'rad'},lg); {const e=el('text',{x:3.9,y:.06,class:'ft',style:'text-anchor:start'},lg);e.textContent='радиатор';}
+  el('line',{x1:5.1,y1:0,x2:5.6,y2:0,class:'dhw'},lg); {const e=el('text',{x:5.7,y:.06,class:'ft',style:'text-anchor:start'},lg);e.textContent='контур бойлера';}
+}
+
+// ---------- подписи ----------
+const gL=layer('');
+rooms.forEach((m,i)=>{
+  const s=m.s||1,[x,y]=m.l;
+  const g=el('g',{transform:`translate(${x} ${y}) scale(${s})`,'pointer-events':'none'},gL);
+  const a=el('text',{x:0,y:-.08,class:'rn'},g); a.textContent=m.n;
+  const b=el('text',{x:0,y:.36,class:'ra'},g); b.textContent=fmt(m.a);
+  const u=el('tspan',{dx:.05},b); u.textContent=' м²';
+  if(m.sub){const c=el('text',{x:0,y:.7,class:'rs'},g); c.textContent=m.sub;}
+});
+
+// ---------- таблица ----------
+const tb=document.getElementById('tb');
+rooms.forEach((m,i)=>{
+  const tr=document.createElement('tr'); tr.className='row'; tr.dataset.i=i;
+  tr.innerHTML=`<td class="n">${i+1}</td><td><span class="dot" style="background:${C[m.t]}"></span>${m.n}${m.sub?' <span class="sub">— '+m.sub+'</span>':''}</td><td class="a">${fmt(m.a)}</td>`;
+  tb.appendChild(tr); m.tr=tr;
+});
+const sum=f=>rooms.filter(f).reduce((s,m)=>s+m.a,0);
+document.getElementById('tl').textContent=fmt(sum(m=>m.t==='living'));
+document.getElementById('tt').textContent=fmt(sum(()=>1));
+function hl(i,on){rooms[i].g.classList.toggle('hl',on);rooms[i].tr.classList.toggle('hl',on)}
+rooms.forEach((m,i)=>{
+  [m.g,m.tr].forEach(n=>{n.addEventListener('mouseenter',()=>hl(i,1));n.addEventListener('mouseleave',()=>hl(i,0))});
+});
+// ---------- до / после: переключатель и ползунок ----------
+if(!HEAT&&!BEFORE&&!EMBED){
+  const card=S.parentElement, stage=document.createElement('div'); stage.className='stage';
+  card.insertBefore(stage,S); stage.appendChild(S);
+  const ov=document.createElement('div'); ov.id='beforeOv'; ov.hidden=true; stage.appendChild(ov);
+  const line=document.createElement('div'); line.id='cmpLine'; line.hidden=true; stage.appendChild(line);
+  const chipB=document.createElement('div'); chipB.className='cmpchip'; chipB.style.left='10px'; chipB.textContent='как было'; chipB.hidden=true; stage.appendChild(chipB);
+  const chipA=document.createElement('div'); chipA.className='cmpchip'; chipA.style.right='130px'; chipA.textContent='как будет'; chipA.hidden=true; stage.appendChild(chipA);
+  const bar=document.createElement('div'); bar.className='cmpbar';
+  bar.innerHTML='<div class="seg" role="group" aria-label="Вариант плана"><button id="mBefore" type="button">До</button><button id="mAfter" type="button" class="on">После</button><button id="mSlide" type="button">Ползунок</button></div>'+
+    '<input id="cmpRange" type="range" min="0" max="100" value="50" aria-label="Граница до и после" hidden><span class="cmphint" id="cmpHint"></span>';
+  card.parentElement.insertBefore(bar,card);
+  const rng=bar.querySelector('#cmpRange'), hint=bar.querySelector('#cmpHint');
+  // «как было» берём из той же страницы в режиме ?before: грузим её скрыто и копируем чертёж
+  let clone=null, beforeRows='', beforeTl='', beforeTt='';
+  const afterRows=document.getElementById('tb').innerHTML, afterTl=document.getElementById('tl').textContent, afterTt=document.getElementById('tt').textContent;
+  const fr=document.createElement('iframe'); fr.src='plan.html?before&embed'; fr.setAttribute('aria-hidden','true'); fr.tabIndex=-1;
+  fr.style.cssText='position:absolute;left:-10000px;top:0;width:1200px;height:1000px;border:0;visibility:hidden';
+  document.body.appendChild(fr);
+  fr.addEventListener('load',()=>{try{
+    const d=fr.contentDocument; clone=d.getElementById('plan').cloneNode(true); clone.id='planBefore';
+    ov.appendChild(clone); clone.setAttribute('viewBox',S.getAttribute('viewBox'));
+    beforeRows=d.getElementById('tb').innerHTML; beforeTl=d.getElementById('tl').textContent; beforeTt=d.getElementById('tt').textContent;
+    apply();
+  }catch(e){hint.textContent='Не удалось загрузить вариант «до».'}});
+  new MutationObserver(()=>{if(clone)clone.setAttribute('viewBox',S.getAttribute('viewBox'))}).observe(S,{attributes:true,attributeFilter:['viewBox']});
+  let mode='after';
+  const h1=document.querySelector('h1');
+  function setTable(before){
+    document.getElementById('tb').innerHTML=before?beforeRows:afterRows;
+    document.getElementById('tl').textContent=before?beforeTl:afterTl;
+    document.getElementById('tt').textContent=before?beforeTt:afterTt;
+    if(!before) rooms.forEach((m,i)=>{m.tr=document.querySelector('#tb tr[data-i="'+i+'"]');
+      if(m.tr){m.tr.addEventListener('mouseenter',()=>hl(i,1));m.tr.addEventListener('mouseleave',()=>hl(i,0))}});
+  }
+  function apply(){
+    ['mBefore','mAfter','mSlide'].forEach(id=>bar.querySelector('#'+id).classList.toggle('on',id==={before:'mBefore',after:'mAfter',slide:'mSlide'}[mode]));
+    const v=+rng.value;
+    ov.hidden=mode==='after'||!clone;
+    ov.style.clipPath=mode==='slide'?`inset(0 ${100-v}% 0 0)`:'none';
+    line.hidden=chipA.hidden=chipB.hidden=mode!=='slide'; line.style.left=v+'%';
+    rng.hidden=mode!=='slide';
+    hint.textContent=mode==='slide'?'слева — как было, справа — как будет':'';
+    h1.textContent=mode==='before'?'План строения · как было':'План строения';
+    if(clone) setTable(mode==='before');
+  }
+  bar.querySelector('#mBefore').onclick=()=>{mode='before';apply()};
+  bar.querySelector('#mAfter').onclick=()=>{mode='after';apply()};
+  bar.querySelector('#mSlide').onclick=()=>{mode='slide';apply()};
+  rng.addEventListener('input',apply);
+}
+
+// ---------- масштаб и сдвиг ----------
+{const V0=S.getAttribute('viewBox').split(' ').map(Number);let v=V0.slice();
+ const set=()=>S.setAttribute('viewBox',v.join(' '));
+ const zoom=(k,cx=v[0]+v[2]/2,cy=v[1]+v[3]/2)=>{
+   const nw=Math.min(V0[2],Math.max(2,v[2]*k)),f=nw/v[2];
+   v=[cx-(cx-v[0])*f,cy-(cy-v[1])*f,nw,v[3]*f];set();};
+ const pt=e=>{const b=S.getBoundingClientRect();return[v[0]+(e.clientX-b.left)/b.width*v[2],v[1]+(e.clientY-b.top)/b.height*v[3]]};
+ S.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?.85:1/.85,...pt(e))},{passive:false});
+ let d=null;
+ S.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,v:v.slice()};S.classList.add('drag');S.setPointerCapture(e.pointerId)});
+ S.addEventListener('pointermove',e=>{if(!d)return;const b=S.getBoundingClientRect();
+   v[0]=d.v[0]-(e.clientX-d.x)/b.width*v[2];v[1]=d.v[1]-(e.clientY-d.y)/b.height*v[3];set()});
+ const up=()=>{d=null;S.classList.remove('drag')};S.addEventListener('pointerup',up);S.addEventListener('pointercancel',up);
+ document.getElementById('zin').onclick=()=>zoom(.75);
+ document.getElementById('zout').onclick=()=>zoom(1/.75);
+ document.getElementById('zreset').onclick=()=>{v=V0.slice();set()};
+}
+</script>
+</body>
+</html>

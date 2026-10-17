@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Фасад со входа</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --paper:#fffdf8; --ink:#1d2229; --muted:#6b7280; --border:#e4ded2;
+    --sky:#eef3f7; --ground:#d9d2c0; --brick:#ece6d8; --brickl:#d6cdb9; --belt:#ddd4c1;
+    --plinth:#b9b2a3; --roof:#4b4f57; --roofl:#5d626b; --frame:#ffffff; --glass:#a9c4d8;
+    --door:#3a3430; --canopy:#6c7077; --line:#7d7568; --dim:#a08355; --dimtext:#7a5f33;
+    --recess:#d9d1c0; --gate:#c9c3b6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121519; --paper:#1a1e24; --ink:#ebe8e1; --muted:#9aa3ad; --border:#2c323a;
+      --sky:#1c2129; --ground:#3a3730; --brick:#cfc8b8; --brickl:#aea692; --belt:#bcb39f;
+      --plinth:#8d877a; --roof:#2a2d33; --roofl:#3a3e46; --frame:#f2f2f2; --glass:#5d7f99;
+      --door:#2a2522; --canopy:#4d5158; --line:#6f685c; --dim:#b8935a; --dimtext:#d6b479;
+      --recess:#b4ac99; --gate:#a8a295;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121519; --paper:#1a1e24; --ink:#ebe8e1; --muted:#9aa3ad; --border:#2c323a;
+    --sky:#1c2129; --ground:#3a3730; --brick:#cfc8b8; --brickl:#aea692; --belt:#bcb39f;
+    --plinth:#8d877a; --roof:#2a2d33; --roofl:#3a3e46; --frame:#f2f2f2; --glass:#5d7f99;
+    --door:#2a2522; --canopy:#4d5158; --line:#6f685c; --dim:#b8935a; --dimtext:#d6b479;
+    --recess:#b4ac99; --gate:#a8a295;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",Inter,system-ui,sans-serif;padding-block:12px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .wrap{max-width:1800px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 6px 10px}
+  h1{font-size:20px;margin:0;font-weight:650}
+  .sub{color:var(--muted);font-size:13px}
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:6px}
+  svg{display:block;width:100%;height:auto}
+  .note{color:var(--muted);font-size:12px;margin:10px 8px 0}
+  .ln{stroke:var(--line);stroke-width:.025;fill:none}
+  .dl{stroke:var(--dim);stroke-width:.018}
+  .dt{stroke:var(--dim);stroke-width:.035}
+  .dx{fill:var(--dimtext);font-size:.3px;text-anchor:middle;font-weight:600}
+  .dx.s{font-size:.24px;font-weight:500;font-style:italic}
+  .lb{fill:var(--muted);font-size:.24px;text-anchor:middle}
+  .tools{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 8px 8px;font-size:13px;color:var(--muted)}
+  .tools label{display:flex;gap:6px;align-items:center;cursor:pointer}
+  .tools button{border:1px solid var(--border);background:var(--paper);color:var(--ink);border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit}
+  .tools b{color:var(--ink);font-weight:600}
+  .drag{cursor:grab}
+  .drag:hover polygon:first-child{stroke:#d9a43b;stroke-width:.04}
+  .drag.on{cursor:grabbing}
+  .nav{display:flex;gap:4px;margin:0 0 10px 6px}
+  .nav a{padding:5px 12px;border-radius:8px;border:1px solid var(--border);color:var(--muted);text-decoration:none;font-size:13px;background:var(--paper)}
+  .nav a.cur{color:var(--ink);border-color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav"><a href="plan.html">План</a><a href="plan.html?heat">Отопление</a><a href="facade.html" class="cur">Фасад</a></nav>
+  <header>
+    <h1>Фасад со стороны прихожей</h1>
+    <div class="sub">Вид с юга, по фото и плану · ширины по плану, высоты ориентировочные</div>
+  </header>
+  <div class="tools">
+    <span>Треугольные окна можно перетаскивать мышью.</span>
+    <label><input type="checkbox" id="sym" checked> симметрично</label>
+    <button id="treset">Сбросить</button>
+    <span id="tinfo"></span>
+  </div>
+  <div class="card">
+    <svg id="f" viewBox="-1.4 -9.4 18.9 11.2" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Фасад со стороны прихожей">
+      <defs>
+        <pattern id="brick" width=".5" height=".26" patternUnits="userSpaceOnUse">
+          <rect width=".5" height=".26" fill="var(--brick)"/>
+          <path d="M0 .13 H.5 M0 .26 H.5 M.25 0 V.13 M0 .13 V.26 M.5 .13 V.26" stroke="var(--brickl)" stroke-width=".012"/>
+        </pattern>
+        <pattern id="roofp" width=".35" height="1" patternUnits="userSpaceOnUse">
+          <rect width=".35" height="1" fill="var(--roof)"/>
+          <line x1=".1" y1="0" x2=".1" y2="1" stroke="var(--roofl)" stroke-width=".03"/>
+        </pattern>
+        <pattern id="glassb" width=".15" height=".15" patternUnits="userSpaceOnUse">
+          <rect width=".15" height=".15" fill="var(--glass)"/>
+          <path d="M0 0 H.15 M0 0 V.15" stroke="var(--frame)" stroke-width=".02"/>
+        </pattern>
+      </defs>
+    </svg>
+  </div>
+  <div class="note">Положение окон и двери по горизонтали взято с плана, высоты и вид кровли оценены по фото. Гараж на фото не попал — нарисован по плану, упрощённо.</div>
+</div>
+<script>
+const S=document.getElementById('f'),NS='http://www.w3.org/2000/svg';
+function el(t,a,p=S){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+// высота h вверх от земли → y=-h
+const R=(x1,h1,x2,h2,a={})=>el('rect',Object.assign({x:x1,y:-h2,width:x2-x1,height:h2-h1},a));
+const P=(pts,a={})=>el('polygon',Object.assign({points:pts.map(([x,h])=>x+','+(-h)).join(' ')},a));
+const L=(x1,h1,x2,h2,c='ln',a={})=>el('line',Object.assign({x1,y1:-h1,x2,y2:-h2,class:c},a));
+const T=(x,h,t,c='lb')=>{const e=el('text',{x,y:-h,class:c});e.textContent=t;return e};
+
+// небо и земля
+R(-1.4,-1.8,17.5,9.4,{fill:'var(--sky)'});
+R(-1.4,-1.8,17.5,0,{fill:'var(--ground)'});
+
+// ---------- линия кровли ----------
+const PK=[4.4,6.84], SL=.871;                // конёк фронтона над центром окна мансарды и уклон скатов
+// излом — над вертикальной стороной правого треугольного окна, на 7 кирпичей (7×77 мм) выше его верха
+const J0=[5.0+1.63, 3.9+.871*.65+7*.077];
+const SR=(PK[1]-J0[1])/(J0[0]-PK[0]);         // правый скат фронтона — от конька до излома
+const hAt=x=>PK[1]-(x<PK[0]?SL:SR)*Math.abs(x-PK[0]);
+const BR=.077;                                // кирпичный ряд 65 мм + шов
+// излом — над правым треугольным окном; край кровли справа — на 3 кирпича выше ворот
+const J=J0, E=[15.8,2.45+3*BR];      // излом и правый край пологого ската
+const hR=x=>J[1]+(E[1]-J[1])*(x-J[0])/(E[0]-J[0]);
+
+// ---------- гараж (по плану) ----------
+P([[11.36,0],[11.36,hR(11.36)],E,[15.8,0]],{fill:'url(#brick)'});
+R(11.36,0,15.8,.45,{fill:'var(--plinth)'});
+// ворота
+// распашные ворота: две створки
+R(12.4,.05,15.0,2.45,{fill:'var(--gate)',stroke:'var(--line)','stroke-width':.04});
+L(13.7,.05,13.7,2.45,'ln',{'stroke-width':.04});
+[[12.4,13.7],[13.7,15.0]].forEach(([a,b])=>{
+  R(a+.12,.2,b-.12,2.3,{fill:'none',stroke:'var(--line)','stroke-width':.025});
+  L(a+.12,.2,b-.12,2.3);                                  // раскос
+});
+[13.58,13.82].forEach(x=>R(x-.02,1.05,x+.02,1.35,{fill:'var(--line)'}));
+// декоративная арка над воротами (как на фото справа)
+el('path',{d:'M12.9 -2.58 Q13.7 -3.18 14.5 -2.58',class:'ln','stroke-width':.05});
+
+// ---------- основной дом + колонна прихожей ----------
+// стены основного дома: фронтон слева, правее стена до пологого ската
+P([[0,0],[0,hAt(0)],PK,J,[11.36,hR(11.36)],[11.36,0]],{fill:'url(#brick)'});
+// кровля: ветровые доски фронтона и свес пологого ската до гаража
+el('polyline',{points:[[-.45,hAt(-.45)],[PK[0],PK[1]+.12],[J[0],J[1]+.12],[16.1,hR(16.1)+.12]].map(([x,h])=>x+','+(-h)).join(' '),
+  fill:'none',stroke:'var(--roof)','stroke-width':.24,'stroke-linejoin':'miter'});
+// утопленная часть входа: стена прихожей отступает на 1,7 м
+// ниша: стена прихожей отступает внутрь дома на 1,7 м
+R(8.98,0,10.96,2.75,{fill:'var(--recess)'});
+R(8.98,0,10.96,2.75,{fill:'url(#brick)',opacity:.45});
+L(8.98,0,8.98,2.75,'ln',{'stroke-width':.04});
+L(10.96,0,10.96,2.75,'ln',{'stroke-width':.04});
+// межэтажный пояс
+R(0,2.95,8.98,3.1,{fill:'var(--belt)'}); R(10.96,2.95,11.36,3.1,{fill:'var(--belt)'});
+// цоколь
+R(0,0,8.98,.45,{fill:'var(--plinth)'}); R(10.96,0,11.36,.45,{fill:'var(--plinth)'});
+// газовая труба вдоль фасада
+L(-.2,2.75,8.9,2.75,'ln',{stroke:'#d9a43b','stroke-width':.06});
+// водосточная труба
+R(3.02,.2,3.12,hAt(3.12)-.12,{fill:'var(--plinth)'});
+
+// окна
+function win(x1,x2,h1,h2,mull=true){
+  R(x1-.06,h1-.08,x2+.06,h1,{fill:'var(--belt)'});           // отлив/подоконник
+  R(x1,h1,x2,h2,{fill:'var(--frame)'});
+  const g=.07;
+  if(mull){const m=(x1+x2)/2;
+    R(x1+g,h1+g,m-g/2,h2-g,{fill:'var(--glass)'}); R(m+g/2,h1+g,x2-g,h2-g,{fill:'var(--glass)'});}
+  else R(x1+g,h1+g,x2-g,h2-g,{fill:'var(--glass)'});
+}
+win(1.65,2.95,.95,2.3);        // спальня
+win(5.9,7.1,.9,2.4);           // жилая 2
+win(3.8,5.0,3.9,5.3);        // стандартное 1200×1400      // по центру между окнами спальни (2.3) и жилой 2 (6.5)      // мансарда, под фронтоном справа от конька
+// маленькое наклонное окно мансарды
+// треугольные окна по бокам от окна мансарды, наклон — как у скатов фронтона
+function tri(xv,xb,h){                     // xv — вертикальная сторона, xb — конец основания
+  const d=Math.abs(xb-xv), top=h+SL*d, sg=Math.sign(xb-xv), g=.07;
+  const grp=el('g',{class:'drag'});
+  const pp=pts=>pts.map(([x,hh])=>x+','+(-hh)).join(' ');
+  el('polygon',{points:pp([[xv,h],[xb,h],[xv,top]]),fill:'var(--frame)'},grp);
+  el('polygon',{points:pp([[xv+sg*g,h+g],[xb-sg*g*2.6,h+g],[xv+sg*g,top-g*2.6]]),fill:'var(--glass)'},grp);
+  return {grp,xv,h,dx:0,dh:0};
+}
+// по умолчанию: на равном расстоянии 1,8 м от окна мансарды, низ — на уровне подоконника
+const TW=[3.8,5.0];                         // края окна мансарды
+const TG=1.63;                              // расстояние от окна мансарды — как выставлено по факту
+const TRI=[tri(TW[0]-TG,TW[0]-TG-.65,3.9), tri(TW[1]+TG,TW[1]+TG+.65,3.9)];
+// арочное окно над входом
+// арочное окно над входом: низ — на 3 кирпича выше перемычки ниши, верх арки — под самой кровлей
+{const cx=9.53, r=.4, h1=2.75+3*BR, hs=hR(cx)-.045-(r+.1)-.01, g=.07;
+ R(cx-r-.06,h1-.07,cx+r+.06,h1,{fill:'var(--belt)'});
+ el('path',{d:`M${cx-r} ${-h1} V${-hs} A${r} ${r} 0 0 1 ${cx+r} ${-hs} V${-h1} Z`,fill:'var(--frame)'});
+ el('path',{d:`M${cx-r+g} ${-h1-g} V${-hs} A${r-g} ${r-g} 0 0 1 ${cx+r-g} ${-hs} V${-h1-g} Z`,fill:'var(--glass)'});
+ L(cx,h1+g,cx,hs+r-g,'ln',{stroke:'var(--frame)','stroke-width':.04});
+ L(cx-r+g,hs,cx+r-g,hs,'ln',{stroke:'var(--frame)','stroke-width':.04});
+ el('path',{d:`M${cx-r-.1} ${-hs} A${r+.1} ${r+.1} 0 0 1 ${cx+r+.1} ${-hs}`,class:'ln','stroke-width':.09,stroke:'var(--brickl)'});}
+
+// крыльцо
+R(8.98,0,11.13,.3,{fill:'var(--plinth)',stroke:'var(--line)','stroke-width':.02});
+R(8.98,.3,10.96,.45,{fill:'var(--plinth)',stroke:'var(--line)','stroke-width':.02});
+// входная дверь
+R(9.08,.45,9.98,2.55,{fill:'var(--door)'});
+R(9.16,.53,9.9,2.47,{fill:'none',stroke:'var(--line)','stroke-width':.02});
+el('circle',{cx:9.82,cy:-1.5,r:.04,fill:'var(--frame)'});
+// стеклоблоки
+// 8 стеклоблоков 200×200, шов 10 мм: 2 в ширину × 4 в высоту
+R(10.285,1.2,10.715,2.06,{fill:'var(--frame)'});
+for(let c=0;c<2;c++)for(let r=0;r<4;r++)R(10.295+c*.21,1.21+r*.21,10.495+c*.21,1.41+r*.21,{fill:'var(--glass)'});
+// козырёк над входом
+// ниша входа без навеса: тень от перемычки и боковых стен
+R(8.98,2.55,10.96,2.75,{fill:'#000',opacity:.28});
+R(8.98,.45,9.06,2.75,{fill:'#000',opacity:.18});
+R(10.88,.45,10.96,2.75,{fill:'#000',opacity:.18});
+L(8.98,2.75,10.96,2.75,'ln',{'stroke-width':.05});
+
+// ---------- размеры ----------
+function dim(x1,x2,h,lab,s){L(x1,h,x2,h,'dl');[x1,x2].forEach(x=>L(x-.1,h-.1,x+.1,h+.1,'dt'));T((x1+x2)/2,h+.1,lab,s?'dx s':'dx')}
+function vdim(x,h1,h2,lab){L(x,h1,x,h2,'dl');[h1,h2].forEach(h=>L(x-.1,h-.1,x+.1,h+.1,'dt'));
+  const t=T(x-.1,(h1+h2)/2,lab,'dx s');t.setAttribute('transform',`rotate(-90 ${x-.1} ${-(h1+h2)/2})`)}
+[0,8.98,11.36,15.8].forEach(x=>L(x,-.1,x,-1.35,'dl'));
+dim(0,8.98,-1.2,'8.98'); dim(8.98,11.36,-1.2,'2.38',1); dim(11.36,15.8,-1.2,'4.44',1);
+L(0,-1.45,0,-1.75,'dl');L(15.8,-1.45,15.8,-1.75,'dl'); dim(0,15.8,-1.6,'15.80');
+[0,2.95].forEach(h=>L(-.1,h,-.95,h,'dl'));
+L(4.3,6.84,-.95,6.84,'dl',{'stroke-dasharray':'.08 .06'});
+vdim(-.8,0,2.95,'≈2.95'); vdim(-.8,2.95,6.84,'≈3.90');
+L(15.9,E[1],16.75,E[1],'dl'); L(15.9,0,16.75,0,'dl'); vdim(16.6,0,E[1],'≈'+E[1].toFixed(2));
+// подписи
+T(2.3,-.55,'спальня'); T(6.5,-.55,'жилая 2'); T(9.97,-.55,'вход'); T(13.7,-.55,'гараж');
+// ---------- перетаскивание треугольных окон ----------
+{const KEY='facade-tri-v2', sym=document.getElementById('sym'), info=document.getElementById('tinfo');
+ const r2=v=>Math.round(v*100)/100;
+ const apply=()=>{TRI.forEach(t=>t.grp.setAttribute('transform',`translate(${t.dx} ${-t.dh})`));
+   const gl=TW[0]-(TRI[0].xv+TRI[0].dx), gr=(TRI[1].xv+TRI[1].dx)-TW[1];
+   info.innerHTML=`от окна: слева <b>${gl.toFixed(2)} м</b>, справа <b>${gr.toFixed(2)} м</b> · низ: <b>${(TRI[0].h+TRI[0].dh).toFixed(2)}</b> / <b>${(TRI[1].h+TRI[1].dh).toFixed(2)} м</b>`;};
+ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(TRI.map(t=>[t.dx,t.dh])))}catch(e){}};
+ try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v)v.forEach(([a,b],i)=>{TRI[i].dx=a;TRI[i].dh=b})}catch(e){}
+ TRI.forEach((t,i)=>{let st=null;
+   t.grp.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY,dx:t.dx,dh:t.dh,o:TRI[1-i].dh};t.grp.classList.add('on');t.grp.setPointerCapture(e.pointerId);e.preventDefault()});
+   t.grp.addEventListener('pointermove',e=>{if(!st)return;
+     const k=S.viewBox.baseVal.width/S.getBoundingClientRect().width;
+     t.dx=r2(st.dx+(e.clientX-st.x)*k); t.dh=r2(st.dh-(e.clientY-st.y)*k);
+     if(sym.checked){const o=TRI[1-i];o.dx=-t.dx;o.dh=t.dh}
+     apply()});
+   const up=()=>{if(!st)return;st=null;t.grp.classList.remove('on');save()};
+   t.grp.addEventListener('pointerup',up);t.grp.addEventListener('pointercancel',up);
+ });
+ document.getElementById('treset').onclick=()=>{TRI.forEach(t=>{t.dx=0;t.dh=0});apply();save()};
+ apply();
+}
+</script>
+</body>
+</html>
