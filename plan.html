@@ -115,6 +115,23 @@
   .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px}
   tfoot td{font-weight:650;border-bottom:none}
   .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  .main{display:flex;flex-direction:column;min-width:0}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .side table{margin-top:0}
+  .narrow-only{display:none}
+  @media (max-width:899px){.narrow-only{display:inline}}
+  /* широкий экран: легенда колонкой слева, план занимает всю высоту окна — странице не нужна прокрутка */
+  @media (min-width:900px){
+    html,body{height:100%}
+    body{padding-block:12px;overflow:hidden}
+    .wrap{height:100%;display:flex;flex-direction:column}
+    .grid{flex:1;min-height:0;grid-template-columns:minmax(300px,380px) 1fr}
+    .side{order:-1;overflow-y:auto;padding-right:4px}
+    .main{min-height:0}
+    .plan-card{flex:1;min-height:0}
+    .stage{height:100%}
+    #plan,#beforeOv svg{height:100%}
+  }
   .note{color:var(--muted);font-size:12px;margin-top:10px}
   .nav{display:flex;gap:4px;margin:0 0 10px 6px}
   .nav a{padding:5px 12px;border-radius:8px;border:1px solid var(--border);color:var(--muted);text-decoration:none;font-size:13px;background:var(--paper)}
@@ -129,6 +146,7 @@
     <div class="sub">Масштаб исходника М 1:100 · размеры в метрах</div>
   </header>
   <div class="grid">
+    <div class="main" id="mainCol">
     <div class="card plan-card">
       <div class="zoom"><button id="zin" title="Приблизить">+</button><button id="zout" title="Отдалить">−</button><button id="zreset" title="Весь план">⤢</button></div>
       <svg id="plan" viewBox="-1.9 -3.25 19.3 15.85" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="План строения">
@@ -139,6 +157,8 @@
         </defs>
       </svg>
     </div>
+    </div>
+    <aside class="side">
     <div class="card" id="heatCard" hidden>
       <table>
         <thead><tr><th>№</th><th>Радиатор</th><th class="a">Длина</th><th class="a">Мощность</th></tr></thead>
@@ -156,8 +176,9 @@
           <tr><td></td><td>Общая площадь помещений</td><td class="a" id="tt"></td></tr>
         </tfoot>
       </table>
-      <div class="note">Наведите на помещение — оно подсветится. Колёсико мыши или +/− — масштаб, перетаскивание — сдвиг плана.</div>
+      <div class="note">Наведите на помещение — оно подсветится. Колёсико мыши или +/− — масштаб, перетаскивание — сдвиг плана<span class="narrow-only"> (на узком экране масштаб колёсиком — с зажатым Ctrl)</span>.</div>
     </div>
+    </aside>
   </div>
 </div>
 <script>
@@ -774,12 +795,14 @@ if(!HEAT&&!BEFORE&&!EMBED){
  const zoom=(k,cx=v[0]+v[2]/2,cy=v[1]+v[3]/2)=>{
    const nw=Math.min(V0[2],Math.max(2,v[2]*k)),f=nw/v[2];
    v=[cx-(cx-v[0])*f,cy-(cy-v[1])*f,nw,v[3]*f];set();};
- const pt=e=>{const b=S.getBoundingClientRect();return[v[0]+(e.clientX-b.left)/b.width*v[2],v[1]+(e.clientY-b.top)/b.height*v[3]]};
- S.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?.85:1/.85,...pt(e))},{passive:false});
+ // экранные координаты → координаты чертежа (учитывает поля, когда план вписан в окно)
+ const pt=e=>{const p=S.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(S.getScreenCTM().inverse());return[q.x,q.y]};
+ const wide=matchMedia('(min-width:900px)');
+ S.addEventListener('wheel',e=>{if(!wide.matches&&!e.ctrlKey)return;e.preventDefault();zoom(e.deltaY<0?.85:1/.85,...pt(e))},{passive:false});
  let d=null;
- S.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,v:v.slice()};S.classList.add('drag');S.setPointerCapture(e.pointerId)});
- S.addEventListener('pointermove',e=>{if(!d)return;const b=S.getBoundingClientRect();
-   v[0]=d.v[0]-(e.clientX-d.x)/b.width*v[2];v[1]=d.v[1]-(e.clientY-d.y)/b.height*v[3];set()});
+ S.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY,v:v.slice(),k:1/S.getScreenCTM().a};S.classList.add('drag');S.setPointerCapture(e.pointerId)});
+ S.addEventListener('pointermove',e=>{if(!d)return;
+   v[0]=d.v[0]-(e.clientX-d.x)*d.k;v[1]=d.v[1]-(e.clientY-d.y)*d.k;set()});
  const up=()=>{d=null;S.classList.remove('drag')};S.addEventListener('pointerup',up);S.addEventListener('pointercancel',up);
  document.getElementById('zin').onclick=()=>zoom(.75);
  document.getElementById('zout').onclick=()=>zoom(1/.75);
